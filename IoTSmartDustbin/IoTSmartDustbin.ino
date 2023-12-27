@@ -13,6 +13,10 @@
 #include <BlynkSimpleEsp8266.h>
 #include <Servo.h>
 #include <ThingSpeak.h>
+#include <ThingESP.h>
+
+/* ThingESP Kurulumu */
+ThingESP8266 thing("nihadasgarov", "SmartDustBin", "nihadasgarov");
 
 /* Kablosuz Bağlantı Bilgileri */
 char auth[] = "aLgifZsuoX81T08ZDJH_xrlIi1v5ozw_";
@@ -99,6 +103,9 @@ void ultrasonic1()
   sure1 = pulseIn(echoPin1, HIGH);
   mesafe1 = sure1 * 0.034 / 2;
   seviye =map(mesafe1, 26, 0, 0,100);
+  seviye = constrain(seviye, 0, 100);
+  String doluluk = "Doluluk: " + String(seviye) + " %";
+  String response = HandleResponse("doluluk");
   Blynk.virtualWrite(V0, mesafe1);
   Blynk.virtualWrite(V1, seviye);
 
@@ -142,6 +149,9 @@ void setup()
   Blynk.begin(auth, ssid, pass);
   delay(1000);
   timer.setInterval(1000L, acikkapali);
+  thing.SetWiFi("Asgarov", "nihat12345");
+
+  thing.initDevice();
 }
 
 /* ThingSpeak Field Yazma İşlemi **/
@@ -151,10 +161,23 @@ void uploadData()
   int data;
   data = ThingSpeak.writeField(Channel_ID, field_no, mesafe2, WriteAPIKey);
 }
+/* ThingESP Whatsapp mesaj gönderme */
+String HandleResponse(String query)
+{
+  
+  if (query == "doluluk") {
+    return "Doluluk: " + String(seviye) + " %";
+  } else {
+    return "Your query was invalid..";
+  }
+
+}
+
 
 void loop() 
 {
   WiFi_Setup();
   Blynk.run();
   timer.run();
+  thing.Handle();
 }
